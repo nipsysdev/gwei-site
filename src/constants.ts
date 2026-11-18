@@ -21,7 +21,7 @@ export const PUBLIC_RPCS = [
 // Network timeouts (ms)
 export const TIMEOUTS = {
   RPC: 5_000, // per eth_call to an Ethereum RPC
-  GATEWAY: 60_000, // per-gateway headers-phase fetch (cleared once headers arrive)
+  GATEWAY: 8_000, // per-gateway headers-phase fetch (cleared once headers arrive)
   IPNS_RESOLVE: 12_000, // per-gateway probe in the IPNS→CID race
   PIN_API: 10_000, // pin existence check + POST (fire-and-forget)
 } as const;
@@ -37,10 +37,9 @@ export const TTL = {
 
 // Public IPFS gateways
 export const PUBLIC_IPFS_GATEWAYS = [
-  "https://ipfs.nipsys.dev",
+  "https://ipfs.xav.dev",
   "https://ipfs.io",
   "https://dweb.link",
-  "https://4everland.io",
   "https://ipfs.filebase.io",
 ];
 
@@ -67,7 +66,7 @@ export const CONTENT_BROWSER_STALE = 86_400; // seconds (1 day)
 // Deno Deploy edge CDN (shared cache) freshness window
 export const CONTENT_EDGE_MAX_AGE = 300; // seconds
 // Deno Deploy edge CDN SWR window
-export const CONTENT_EDGE_STALE = 300; // seconds
+export const CONTENT_EDGE_STALE = 86_400; // seconds (1 day)
 
 // EVM Function selectors (4-byte hex, no 0x prefix) ---
 export const SEL_COMPUTEID = "fb021939"; // computeid(string): name → tokenId
