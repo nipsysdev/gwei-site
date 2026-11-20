@@ -10,7 +10,7 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { stub } from "jsr:@std/testing@1/mock";
 import { _setKvForTests, cacheClear, cacheSet } from "../cache.ts";
-import { CACHE_KEYS, PUBLIC_IPFS_GATEWAYS } from "../constants.ts";
+import { CACHE_KEYS, IPFS_GATEWAY_FALLBACKS } from "../constants.ts";
 import { proxyContent, resolveIpnsToCid } from "../proxy.ts";
 
 // A realistic base32-multibase CIDv1 (DAG-PB) used across the happy-path tests.
@@ -72,12 +72,12 @@ Deno.test("resolveIpnsToCid: returns the CID from x-ipfs-roots", async () => {
 
 Deno.test("resolveIpnsToCid: takes the gateway that yields a CID", async () => {
   using _s = setup();
-  // Every gateway returns 200; only ipfs.io carries roots. The race must pick
-  // the one that yields a CID rather than collapsing to null.
+  // Every gateway returns 200; only ipfs.xav.dev carries roots. The race must
+  // pick the one that yields a CID rather than collapsing to null.
   using _f = stub(globalThis, "fetch", (input: URL | Request | string) => {
     const url = urlOf(input);
     return Promise.resolve(
-      url.startsWith("https://ipfs.io/") ? gatewayResponse(CID) : gatewayResponse(null),
+      url.startsWith("https://ipfs.xav.dev/") ? gatewayResponse(CID) : gatewayResponse(null),
     );
   });
 
@@ -204,7 +204,7 @@ Deno.test("resolveIpnsToCid: an aborted caller does not poison the cache", async
   using _f = stub(globalThis, "fetch", () => {
     calls++;
     return Promise.resolve(
-      calls <= PUBLIC_IPFS_GATEWAYS.length + 1 ? gatewayResponse(null) : gatewayResponse(CID),
+      calls <= IPFS_GATEWAY_FALLBACKS.length + 1 ? gatewayResponse(null) : gatewayResponse(CID),
     );
   });
   const ctrl = new AbortController();
@@ -273,7 +273,7 @@ Deno.test("resolveIpnsToCid: concurrent calls for the same peer share one race",
   assertEquals([a, b], [CID, CID]);
   // Single-flight coalesced the two concurrent calls into one race: exactly one
   // fan-out across the gateway list, not two.
-  assertEquals(calls, PUBLIC_IPFS_GATEWAYS.length + 1);
+  assertEquals(calls, IPFS_GATEWAY_FALLBACKS.length + 1);
 });
 
 // --- integration with proxyContent ------------------------------------------
