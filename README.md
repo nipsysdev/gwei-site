@@ -4,7 +4,7 @@ An edge gateway that serves websites from on-chain contenthashes. Given `<name>.
 resolves the name on Ethereum and proxies its IPFS, IPNS, or Swarm content from dedicated and public
 gateways.
 
-Built for [Deno Deploy](https://deno.com/deploy). Zero runtime dependencies. Strict TypeScript. 128
+Built for [Deno Deploy](https://deno.com/deploy). Zero runtime dependencies. Strict TypeScript. 115
 tests.
 
 A Deno Deploy rewrite of the [gwei.domains](https://gwei.domains) gateway (originally a Cloudflare
@@ -12,17 +12,17 @@ Worker in the [gwei-names](https://github.com/lucadonnoh/gwei-names) monorepo).
 
 ## Infrastructure
 
-The gateway is built on [4EVERLAND](https://4everland.org) for three services:
+The gateway is built on [4EVERLAND](https://4everland.org) for two services:
 
 - **RPC** — Ethereum JSON-RPC for on-chain name resolution. A free key is primary; a paid key
   absorbs rate-limit overflow. Public RPCs are last-resort fallback.
 - **Dedicated gateway** — an IPFS content gateway with no rate limits, used as the primary source
   for proxied content. The owner's node and a dedicated Pinata gateway serve as fallback.
-- **Pinning** — resolved CIDs are proactively pinned to 4EVERLAND's nodes, so content is cached
-  close to the dedicated gateway for faster retrieval. The same CIDs are also pinned to
-  [Pinata](https://pinata.cloud) as a second, independently operated copy.
 
-All three are optional — without configuration the gateway degrades gracefully to public endpoints.
+Both are optional — without configuration the gateway degrades gracefully to public endpoints.
+
+The worker is **pin-free**: it serves content but never pins. Pinning of owned content happens at
+deploy time in the site repo, not in the gateway.
 
 ## Quick start
 
@@ -50,16 +50,14 @@ Three storage backends are supported — IPFS (CIDv1), IPNS (libp2p-key), and Sw
 
 ## Configuration
 
-Five optional environment variables for 4EVERLAND and Pinata infrastructure. Without them, the
-gateway uses public endpoints only.
+Three optional environment variables for 4EVERLAND infrastructure. Without them, the gateway uses
+public endpoints only.
 
 | Variable            | Purpose                                                          |
 | ------------------- | ---------------------------------------------------------------- |
 | `RPC_KEY`           | 4EVERLAND RPC key (free tier, primary)                           |
 | `RPC_KEY_FALLBACK`  | Paid 4EVERLAND RPC key (used when the free tier is rate-limited) |
 | `DEDICATED_GATEWAY` | 4EVERLAND dedicated gateway hostname (primary for content)       |
-| `PIN_TOKEN`         | 4EVERLAND pin API token (proactive IPFS pinning)                 |
-| `PINATA_JWT`        | Pinata API JWT (proactive IPFS pinning, second copy)             |
 
 Set these in Deno Deploy → Settings → Environment Variables.
 
@@ -77,7 +75,7 @@ CUSTOM_DOMAINS=xav.dev=xav.gwei,blog.example.com=blog.gwei
 Point each domain at the gateway (DNS CNAME + a
 [Deno Deploy custom domain](https://docs.deno.com/deploy/classic/custom-domains/) so TLS is
 terminated). The gateway then resolves the mapped name exactly as it would for `xav.gwei.site` —
-same resolution, caching, and pinning — so both hosts share one on-chain lookup.
+same resolution and caching — so both hosts share one on-chain lookup.
 
 ## Architecture
 
@@ -91,7 +89,6 @@ src/
   proxy.ts         Content proxy + IPNS→CID resolution
   rpc.ts           eth_call client with sequential failover
   cache.ts         Two-tier cache (L1 Map + L2 KV) with SWR + single-flight
-  pinner.ts        Fire-and-forget IPFS pinning with cross-isolate dedup
   encoding.ts      ABI / hex / base32 / base36 helpers
   types.ts         Shared types
 ```

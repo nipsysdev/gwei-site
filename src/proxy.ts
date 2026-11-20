@@ -12,7 +12,6 @@ import {
   TTL,
 } from "./constants.ts";
 import { cacheGet, cacheSet, dedupe } from "./cache.ts";
-import { pinCid } from "./pinner.ts";
 import type { Protocol } from "./types.ts";
 
 function contentGateways(): string[] {
@@ -32,7 +31,6 @@ export async function proxyContent(
     const cid = await resolveIpnsToCid(ref);
     if (cid) {
       console.info(`[proxy] ${name}: IPNS ${ref} resolved to CID ${cid}`);
-      pinCid(cid, name);
       const gws = contentGateways();
       return fetchViaGateways(gws, "/ipfs/", "x-ipfs-cid", cid, name, pathname, search, accept);
     }

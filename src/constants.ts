@@ -5,13 +5,6 @@
 // NameNFT contract address (same on Mainnet & Sepolia)
 export const NAMENFT = "0x9D51D507BC7264d4fE8Ad1cf7Fe191933A0a81d6";
 
-// 4EVERLAND Pinning Services API endpoint
-export const PIN_API = "https://api.4everland.dev/pins";
-
-// Pinata Files API v3 endpoints (public IPFS network)
-export const PINATA_PIN_API = "https://api.pinata.cloud/v3/files/public/pin_by_cid";
-export const PINATA_FILES_API = "https://api.pinata.cloud/v3/files/public";
-
 // 4EVERLAND Ethereum RPC base URL
 export const RPC_ENDPOINT = "https://eth-mainnet.4everland.org/v1";
 
@@ -26,7 +19,6 @@ export const TIMEOUTS = {
   RPC: 5_000, // per eth_call to an Ethereum RPC
   GATEWAY: 8_000, // per-gateway headers-phase fetch (cleared once headers arrive)
   IPNS_RESOLVE: 12_000, // per-gateway probe in the IPNS→CID race
-  PIN_API: 10_000, // pin existence check + POST (fire-and-forget)
 } as const;
 
 // Internal caching TTLs (ms)
@@ -39,7 +31,7 @@ export const TTL = {
 } as const;
 
 // IPFS gateway fallback chain, tried in order after the configured dedicated
-// gateway. 4EVERLAND stays pin-only — its gateway refuses HTML.
+// gateway. 4EVERLAND's gateway is not in the chain — it refuses HTML.
 export const IPFS_GATEWAY_FALLBACKS = [
   "https://ipfs.xav.dev",
   "https://coffee-holy-snipe-120.mypinata.cloud",

@@ -10,7 +10,6 @@ import {
 import { cacheGet, cacheSet, dedupe } from "./cache.ts";
 import { base32, base36, encodeString, hexToBytes } from "./encoding.ts";
 import { ethCall, rpcs } from "./rpc.ts";
-import { pinCid } from "./pinner.ts";
 import type { DecodedContenthash, ResolutionResult } from "./types.ts";
 
 /**
@@ -38,7 +37,6 @@ export function resolveName(name: string): Promise<ResolutionResult> {
 
     if (decoded.status === "ref") {
       console.info(`[resolver] ${name} → ${decoded.kind} ${decoded.ref}`);
-      if (decoded.kind === "ipfs") pinCid(decoded.ref, name);
     } else if (decoded.status === "none") {
       console.info(`[resolver] ${name} → no contenthash`);
     } else {
