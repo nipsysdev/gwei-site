@@ -1,5 +1,6 @@
 export interface Config {
   readonly pinToken: string;
+  readonly pinataJwt: string;
   readonly rpcKey: string;
   readonly rpcKeyFallback: string;
   readonly dedicatedGateway: string;
@@ -26,6 +27,7 @@ export function parseCustomDomains(raw: string): ReadonlyMap<string, string> {
 
 export class ConfigBuilder {
   #pinToken = "";
+  #pinataJwt = "";
   #rpcKey = "";
   #rpcKeyFallback = "";
   #dedicatedGateway = "";
@@ -34,6 +36,7 @@ export class ConfigBuilder {
   static fromEnv(): ConfigBuilder {
     return new ConfigBuilder()
       .pinToken(Deno.env.get("PIN_TOKEN") ?? "")
+      .pinataJwt(Deno.env.get("PINATA_JWT") ?? "")
       .rpcKey(Deno.env.get("RPC_KEY") ?? "")
       .rpcKeyFallback(Deno.env.get("RPC_KEY_FALLBACK") ?? "")
       .dedicatedGateway(Deno.env.get("DEDICATED_GATEWAY") ?? "")
@@ -42,6 +45,11 @@ export class ConfigBuilder {
 
   pinToken(v: string): this {
     this.#pinToken = v;
+    return this;
+  }
+
+  pinataJwt(v: string): this {
+    this.#pinataJwt = v;
     return this;
   }
 
@@ -69,6 +77,7 @@ export class ConfigBuilder {
   build(): Config {
     return {
       pinToken: this.#pinToken,
+      pinataJwt: this.#pinataJwt,
       rpcKey: this.#rpcKey,
       rpcKeyFallback: this.#rpcKeyFallback,
       dedicatedGateway: this.#dedicatedGateway,

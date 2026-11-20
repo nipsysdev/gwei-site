@@ -70,8 +70,7 @@ function gatewayResponse(body = "<h1>Hello from IPFS</h1>"): Response {
 
 /** Whether a URL targets one of the configured RPC endpoints. */
 function isRpcUrl(url: string): boolean {
-  return url.includes("0xrpc.io") || url.includes("tenderly") || url.includes("publicnode") ||
-    url.includes("4everland.org");
+  return url.includes("0xrpc.io") || url.includes("publicnode") || url.includes("4everland.org");
 }
 
 /** Resolve a fetch input to its URL string. */

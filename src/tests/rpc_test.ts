@@ -110,26 +110,26 @@ Deno.test("buildRpcs: both keys → primary then fallback then public RPCs", () 
   assertEquals(rpcs[0], PRIMARY);
   assertEquals(rpcs[1], FALLBACK);
   assertEquals(rpcs[2], FIRST_PUBLIC);
-  assertEquals(rpcs.length, 5); // 2 × 4everland + 3 public
+  assertEquals(rpcs.length, 4); // 2 × 4everland + 2 public
 });
 
 Deno.test("buildRpcs: only primary key set → primary then public", () => {
   const rpcs = buildRpcs("free-key", "");
   assertEquals(rpcs[0], PRIMARY);
   assertEquals(rpcs[1], FIRST_PUBLIC);
-  assertEquals(rpcs.length, 4);
+  assertEquals(rpcs.length, 3);
 });
 
 Deno.test("buildRpcs: only fallback key set → fallback then public", () => {
   const rpcs = buildRpcs("", "paid-key");
   assertEquals(rpcs[0], FALLBACK);
   assertEquals(rpcs[1], FIRST_PUBLIC);
-  assertEquals(rpcs.length, 4);
+  assertEquals(rpcs.length, 3);
 });
 
 Deno.test("buildRpcs: no keys set → public RPCs only, no 4everland entry", () => {
   const rpcs = buildRpcs("", "");
   assertEquals(rpcs[0], FIRST_PUBLIC);
-  assertEquals(rpcs.length, 3);
+  assertEquals(rpcs.length, 2);
   assertEquals(rpcs.some((r) => r.includes("4everland")), false);
 });

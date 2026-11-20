@@ -5,7 +5,7 @@ import {
   CONTENT_BROWSER_STALE,
   CONTENT_EDGE_MAX_AGE,
   CONTENT_EDGE_STALE,
-  PUBLIC_IPFS_GATEWAYS,
+  IPFS_GATEWAY_FALLBACKS,
   ROUTING_V1_ENDPOINT,
   SWARM_GATEWAYS,
   TIMEOUTS,
@@ -17,7 +17,7 @@ import type { Protocol } from "./types.ts";
 
 function contentGateways(): string[] {
   const gw = getConfig().dedicatedGateway;
-  return gw ? [`https://${gw}`, ...PUBLIC_IPFS_GATEWAYS] : [...PUBLIC_IPFS_GATEWAYS];
+  return gw ? [`https://${gw}`, ...IPFS_GATEWAY_FALLBACKS] : [...IPFS_GATEWAY_FALLBACKS];
 }
 
 export async function proxyContent(
@@ -241,12 +241,12 @@ function resolveViaGatewayRace(
   peerId: string,
   callerSignal?: AbortSignal,
 ): Promise<string | null> {
-  if (PUBLIC_IPFS_GATEWAYS.length === 0) return Promise.resolve(null);
-  const controllers = PUBLIC_IPFS_GATEWAYS.map(() => new AbortController());
+  if (IPFS_GATEWAY_FALLBACKS.length === 0) return Promise.resolve(null);
+  const controllers = IPFS_GATEWAY_FALLBACKS.map(() => new AbortController());
 
   return new Promise<string | null>((resolve) => {
     let settled = false;
-    let pending = PUBLIC_IPFS_GATEWAYS.length;
+    let pending = IPFS_GATEWAY_FALLBACKS.length;
 
     const finish = (cid: string | null) => {
       if (settled) return;
@@ -255,7 +255,7 @@ function resolveViaGatewayRace(
       resolve(cid);
     };
 
-    PUBLIC_IPFS_GATEWAYS.forEach(async (gw, i) => {
+    IPFS_GATEWAY_FALLBACKS.forEach(async (gw, i) => {
       try {
         const sigs: AbortSignal[] = [
           controllers[i].signal,

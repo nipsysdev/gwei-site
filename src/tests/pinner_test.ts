@@ -161,3 +161,116 @@ Deno.test("pinCid: passes the CID (not the name) as the dedup filter", async () 
     resetConfig();
   }
 });
+
+function pinataListResponse(count: number, status = 200): Response {
+  const files = count > 0 ? [{ id: "file-1", name: "x", cid: "x" }] : [];
+  return new Response(JSON.stringify({ data: { files } }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function pinataPinResponse(status = 200): Response {
+  return new Response(JSON.stringify({ data: { id: "file-new", cid: "x", status: "queued" } }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+Deno.test("pinCid: no fetch when neither pin token is configured", async () => {
+  resetConfig();
+  using _f = pinFetchStub();
+  await pinCid("cid-no-tokens");
+  assertEquals(_f.gets(), 0);
+  assertEquals(_f.posts(), 0);
+});
+
+Deno.test("pinCid: pins to Pinata when PINATA_JWT is set and the CID is absent", async () => {
+  setConfig(new ConfigBuilder().pinataJwt("test-jwt").build());
+  let getUrl = "";
+  let postBody = "";
+  let postCount = 0;
+  using _ = stub(globalThis, "fetch", (input: URL | Request | string, init?: RequestInit) => {
+    const method = init?.method ?? "GET";
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (method === "GET") {
+      getUrl = url;
+      return Promise.resolve(pinataListResponse(0));
+    }
+    postCount++;
+    postBody = typeof init?.body === "string" ? init.body : "";
+    return Promise.resolve(pinataPinResponse());
+  });
+  try {
+    await pinCid("bafypinata", "xav.gwei");
+    assert(getUrl.includes("cid=bafypinata"), `expected cid= filter in ${getUrl}`);
+    assert(getUrl.includes("limit=1"), `expected limit=1 in ${getUrl}`);
+    assert(postBody.includes("bafypinata"), `expected cid in POST body ${postBody}`);
+    assertEquals(postCount, 1);
+  } finally {
+    resetConfig();
+  }
+});
+
+Deno.test("pinCid: skips the Pinata POST when the CID is already pinned there", async () => {
+  setConfig(new ConfigBuilder().pinataJwt("test-jwt").build());
+  let gets = 0;
+  let posts = 0;
+  using _ = stub(globalThis, "fetch", (_input: URL | Request | string, init?: RequestInit) => {
+    if ((init?.method ?? "GET") === "GET") gets++;
+    else posts++;
+    return Promise.resolve(pinataListResponse(1));
+  });
+  try {
+    await pinCid("cid-pinata-exists");
+    assertEquals(gets, 1);
+    assertEquals(posts, 0);
+  } finally {
+    resetConfig();
+  }
+});
+
+Deno.test("pinCid: pins to both operators when both tokens are configured", async () => {
+  setConfig(new ConfigBuilder().pinToken("test-token").pinataJwt("test-jwt").build());
+  const counts = { fourEverGets: 0, fourEverPosts: 0, pinataGets: 0, pinataPosts: 0 };
+  using _ = stub(globalThis, "fetch", (input: URL | Request | string, init?: RequestInit) => {
+    const method = init?.method ?? "GET";
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const pinata = url.includes("pinata.cloud");
+    if (pinata) {
+      if (method === "GET") counts.pinataGets++;
+      else counts.pinataPosts++;
+      return Promise.resolve(pinataListResponse(0));
+    }
+    if (method === "GET") counts.fourEverGets++;
+    else counts.fourEverPosts++;
+    return Promise.resolve(listResponse(0));
+  });
+  try {
+    await pinCid("cid-both", "xav.gwei");
+    assertEquals(counts, { fourEverGets: 1, fourEverPosts: 1, pinataGets: 1, pinataPosts: 1 });
+  } finally {
+    resetConfig();
+  }
+});
+
+Deno.test("pinCid: a failing 4EVERLAND existence check does not block the Pinata pin", async () => {
+  setConfig(new ConfigBuilder().pinToken("test-token").pinataJwt("test-jwt").build());
+  let pinataPosts = 0;
+  using _ = stub(globalThis, "fetch", (input: URL | Request | string, init?: RequestInit) => {
+    const method = init?.method ?? "GET";
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (url.includes("pinata.cloud")) {
+      if (method === "GET") return Promise.resolve(pinataListResponse(0));
+      pinataPosts++;
+      return Promise.resolve(pinataPinResponse());
+    }
+    return Promise.reject(new Error("network down"));
+  });
+  try {
+    await pinCid("cid-independent");
+    assertEquals(pinataPosts, 1);
+  } finally {
+    resetConfig();
+  }
+});

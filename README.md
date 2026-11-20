@@ -4,7 +4,7 @@ An edge gateway that serves websites from on-chain contenthashes. Given `<name>.
 resolves the name on Ethereum and proxies its IPFS, IPNS, or Swarm content from dedicated and public
 gateways.
 
-Built for [Deno Deploy](https://deno.com/deploy). Zero runtime dependencies. Strict TypeScript. 104
+Built for [Deno Deploy](https://deno.com/deploy). Zero runtime dependencies. Strict TypeScript. 128
 tests.
 
 A Deno Deploy rewrite of the [gwei.domains](https://gwei.domains) gateway (originally a Cloudflare
@@ -17,9 +17,10 @@ The gateway is built on [4EVERLAND](https://4everland.org) for three services:
 - **RPC** — Ethereum JSON-RPC for on-chain name resolution. A free key is primary; a paid key
   absorbs rate-limit overflow. Public RPCs are last-resort fallback.
 - **Dedicated gateway** — an IPFS content gateway with no rate limits, used as the primary source
-  for proxied content. Public IPFS gateways serve as fallback.
+  for proxied content. The owner's node and a dedicated Pinata gateway serve as fallback.
 - **Pinning** — resolved CIDs are proactively pinned to 4EVERLAND's nodes, so content is cached
-  close to the dedicated gateway for faster retrieval.
+  close to the dedicated gateway for faster retrieval. The same CIDs are also pinned to
+  [Pinata](https://pinata.cloud) as a second, independently operated copy.
 
 All three are optional — without configuration the gateway degrades gracefully to public endpoints.
 
@@ -49,8 +50,8 @@ Three storage backends are supported — IPFS (CIDv1), IPNS (libp2p-key), and Sw
 
 ## Configuration
 
-Four optional environment variables for 4EVERLAND infrastructure. Without them, the gateway uses
-public endpoints only.
+Five optional environment variables for 4EVERLAND and Pinata infrastructure. Without them, the
+gateway uses public endpoints only.
 
 | Variable            | Purpose                                                          |
 | ------------------- | ---------------------------------------------------------------- |
@@ -58,6 +59,7 @@ public endpoints only.
 | `RPC_KEY_FALLBACK`  | Paid 4EVERLAND RPC key (used when the free tier is rate-limited) |
 | `DEDICATED_GATEWAY` | 4EVERLAND dedicated gateway hostname (primary for content)       |
 | `PIN_TOKEN`         | 4EVERLAND pin API token (proactive IPFS pinning)                 |
+| `PINATA_JWT`        | Pinata API JWT (proactive IPFS pinning, second copy)             |
 
 Set these in Deno Deploy → Settings → Environment Variables.
 
