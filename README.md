@@ -17,7 +17,8 @@ The gateway is built on [4EVERLAND](https://4everland.org) for two services:
 - **RPC** — Ethereum JSON-RPC for on-chain name resolution. A free key is primary; a paid key
   absorbs rate-limit overflow. Public RPCs are last-resort fallback.
 - **Dedicated gateway** — an IPFS content gateway with no rate limits, used as the primary source
-  for proxied content. The owner's node and a dedicated Pinata gateway serve as fallback.
+  for proxied content. The owner's node, a dedicated Pinata gateway, and a dedicated Filebase
+  gateway serve as fallback.
 
 Both are optional — without configuration the gateway degrades gracefully to public endpoints.
 

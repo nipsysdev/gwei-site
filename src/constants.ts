@@ -35,7 +35,7 @@ export const TTL = {
 export const IPFS_GATEWAY_FALLBACKS = [
   "https://ipfs.xav.dev",
   "https://coffee-holy-snipe-120.mypinata.cloud",
-  // Filebase account gateway — to be added in a later step.
+  "https://charming-brown-primate.myfilebase.com",
 ];
 
 // IPFS Routing V1 endpoint (delegated routing for IPNS resolution)
