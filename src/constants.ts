@@ -34,7 +34,6 @@ export const TTL = {
 // gateway. 4EVERLAND's gateway is not in the chain — it refuses HTML.
 export const IPFS_GATEWAY_FALLBACKS = [
   "https://ipfs.xav.dev",
-  "https://coffee-holy-snipe-120.mypinata.cloud",
   "https://charming-brown-primate.myfilebase.com",
 ];
 
