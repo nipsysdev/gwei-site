@@ -4,6 +4,27 @@ import { PIN_API, PINATA_FILES_API, PINATA_PIN_API, TIMEOUTS } from "./constants
 const pinnedOn4Everland = new Set<string>();
 const pinnedOnPinata = new Set<string>();
 
+interface PinTarget {
+  readonly operatorName: string;
+  readonly pinUrl: string;
+  readonly pinned: Set<string>;
+  readonly existsOnOperator: (cid: string, token: string) => Promise<boolean | null>;
+}
+
+const FOUR_EVERLAND: PinTarget = {
+  operatorName: "4EVERLAND",
+  pinUrl: PIN_API,
+  pinned: pinnedOn4Everland,
+  existsOnOperator: existsOn4Everland,
+};
+
+const PINATA: PinTarget = {
+  operatorName: "Pinata",
+  pinUrl: PINATA_PIN_API,
+  pinned: pinnedOnPinata,
+  existsOnOperator: existsOnPinata,
+};
+
 export async function pinCid(cid: string, name?: string): Promise<void> {
   await pinOn4Everland(cid, name);
   await pinOnPinata(cid, name);
@@ -12,52 +33,41 @@ export async function pinCid(cid: string, name?: string): Promise<void> {
 async function pinOn4Everland(cid: string, name?: string): Promise<void> {
   const token = getConfig().pinToken;
   if (!token) return;
-  await pinWithOperator(
-    "4EVERLAND",
-    PIN_API,
-    cid,
-    name,
-    token,
-    pinnedOn4Everland,
-    existsOn4Everland,
-  );
+  await pinWithOperator(FOUR_EVERLAND, cid, name, token);
 }
 
 async function pinOnPinata(cid: string, name?: string): Promise<void> {
   const token = getConfig().pinataJwt;
   if (!token) return;
-  await pinWithOperator("Pinata", PINATA_PIN_API, cid, name, token, pinnedOnPinata, existsOnPinata);
+  await pinWithOperator(PINATA, cid, name, token);
 }
 
 async function pinWithOperator(
-  operatorName: string,
-  pinUrl: string,
+  target: PinTarget,
   cid: string,
   name: string | undefined,
   token: string,
-  pinned: Set<string>,
-  existsOnOperator: (cid: string, token: string) => Promise<boolean | null>,
 ): Promise<void> {
   try {
-    if (pinned.has(cid)) return;
-    pinned.add(cid);
+    if (target.pinned.has(cid)) return;
+    target.pinned.add(cid);
     const label = name ? `${name} (${cid})` : cid;
 
-    const exists = await existsOnOperator(cid, token);
+    const exists = await target.existsOnOperator(cid, token);
     if (exists) {
-      console.info(`[pin] ${label} already pinned on ${operatorName}, skipping`);
+      console.info(`[pin] ${label} already pinned on ${target.operatorName}, skipping`);
       return;
     }
     if (exists === null) {
-      pinned.delete(cid);
+      target.pinned.delete(cid);
       console.warn(
-        `[pin] ${label} existence check failed on ${operatorName}; not pinning to avoid a duplicate`,
+        `[pin] ${label} existence check failed on ${target.operatorName}; not pinning to avoid a duplicate`,
       );
       return;
     }
 
-    console.info(`[pin] pinning ${label} on ${operatorName}`);
-    const res = await fetch(pinUrl, {
+    console.info(`[pin] pinning ${label} on ${target.operatorName}`);
+    const res = await fetch(target.pinUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -67,15 +77,15 @@ async function pinWithOperator(
       signal: AbortSignal.timeout(TIMEOUTS.PIN_API),
     });
     if (res.ok) {
-      console.info(`[pin] ${label} → pinned on ${operatorName} (${res.status})`);
+      console.info(`[pin] ${label} → pinned on ${target.operatorName} (${res.status})`);
     } else {
       console.error(
-        `[pin] ${label} → pin on ${operatorName} failed (${res.status} ${res.statusText})`,
+        `[pin] ${label} → pin on ${target.operatorName} failed (${res.status} ${res.statusText})`,
       );
     }
   } catch (e) {
     console.error(
-      `[pin] ${cid} pin on ${operatorName} failed:`,
+      `[pin] ${cid} pin on ${target.operatorName} failed:`,
       e instanceof Error ? e.message : String(e),
     );
   }
